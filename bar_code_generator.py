@@ -40,22 +40,26 @@ if st.session_state.csv_subido and st.session_state.file is not None:
 
     # --- Leer archivo ---
     try:
-        if uploaded_file.name.endswith(".csv"):
+    if uploaded_file.name.endswith(".csv"):
+        # Intentar primero con ';'
+        try:
+            df = pd.read_csv(uploaded_file, sep=";", encoding="utf-8")
+        except Exception:
+            # Si falla, intentar con ','
             try:
-                df = pd.read_csv(uploaded_file, sep=";", encoding="utf-8")
+                df = pd.read_csv(uploaded_file, sep=",", encoding="utf-8")
             except UnicodeDecodeError:
-                df = pd.read_csv(uploaded_file, sep=";", encoding="latin-1")
-        elif uploaded_file.name.endswith(".xlsx"):
-            df = pd.read_excel(uploaded_file)
-        else:
-            st.error("Formato de archivo no soportado.")
-            st.stop()
-
-        st.success(f"Archivo leído correctamente. Contiene {len(df)} filas.")
-    except Exception as e:
-        st.error(f"Error al leer el archivo: {e}")
+                df = pd.read_csv(uploaded_file, sep=",", encoding="latin-1")
+        st.success(f"Archivo CSV leído correctamente. Contiene {len(df)} filas.")
+    elif uploaded_file.name.endswith(".xlsx"):
+        df = pd.read_excel(uploaded_file)
+        st.success(f"Archivo Excel leído correctamente. Contiene {len(df)} filas.")
+    else:
+        st.error("Formato de archivo no soportado.")
         st.stop()
-
+except Exception as e:
+    st.error(f"Error al leer el archivo: {e}")
+    st.stop()
     # --- Verificar columnas ---
     if nombre_col_producto not in df.columns or nombre_col_codigo not in df.columns:
         st.error("No se encontraron las columnas especificadas en el archivo.")
