@@ -10,18 +10,13 @@ import os
 st.set_page_config(page_title="Generador de Códigos de Barras", layout="wide")
 st.title("Generador de Códigos de Barras")
 
-# --- Botón Recargar seguro ---
-if "reset" not in st.session_state:
-    st.session_state.reset = False
+# --- Estado para recargar ---
+if "csv_subido" not in st.session_state:
+    st.session_state.csv_subido = False
 
 if st.button("🔄 Recargar"):
-    st.session_state.reset = True
-
-if st.session_state.reset:
-    # Limpiar estado
-    for key in list(st.session_state.keys()):
-        del st.session_state[key]
-    st.experimental_rerun()
+    st.session_state.csv_subido = False
+    st.session_state.file = None
 
 # --- Parámetros del usuario ---
 nombre_col_producto = st.text_input("Nombre columna producto", "Nombre producto")
@@ -32,21 +27,38 @@ font_size = st.slider("Tamaño del texto", 6, 24, 12)
 text_distance = st.slider("Separación texto-barras", 0, 20, 5)
 quiet_zone = st.slider("Margen alrededor del código", 0, 20, 6)
 
-# --- Subir CSV ---
-uploaded_file = st.file_uploader("Sube tu CSV", type=["csv"])
-if uploaded_file is not None:
-    # --- Leer CSV ---
+# --- Subir archivo ---
+if not st.session_state.csv_subido:
+    uploaded_file = st.file_uploader("Sube tu CSV o Excel", type=["csv", "xlsx"])
+    if uploaded_file is not None:
+        st.session_state.csv_subido = True
+        st.session_state.file = uploaded_file
+
+# --- Procesar archivo si ya se subió ---
+if st.session_state.csv_subido and st.session_state.file is not None:
+    uploaded_file = st.session_state.file
+
+    # --- Leer archivo ---
     try:
-        df = pd.read_csv(uploaded_file, sep=";", encoding="utf-8")
-    except UnicodeDecodeError:
-        df = pd.read_csv(uploaded_file, sep=";", encoding="latin-1")
+        if uploaded_file.name.endswith(".csv"):
+            try:
+                df = pd.read_csv(uploaded_file, sep=";", encoding="utf-8")
+            except UnicodeDecodeError:
+                df = pd.read_csv(uploaded_file, sep=";", encoding="latin-1")
+        elif uploaded_file.name.endswith(".xlsx"):
+            df = pd.read_excel(uploaded_file)
+        else:
+            st.error("Formato de archivo no soportado.")
+            st.stop()
+
+        st.success(f"Archivo leído correctamente. Contiene {len(df)} filas.")
     except Exception as e:
-        st.error(f"Error al leer CSV: {e}")
+        st.error(f"Error al leer el archivo: {e}")
         st.stop()
 
     # --- Verificar columnas ---
     if nombre_col_producto not in df.columns or nombre_col_codigo not in df.columns:
-        st.error("No se encontraron las columnas especificadas en el CSV.")
+        st.error("No se encontraron las columnas especificadas en el archivo.")
         st.stop()
 
     # --- Carpeta temporal ---
