@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 import re
 import zipfile
 import os
-from io import BytesIO
 
 st.title("Generador de Códigos de Barras")
 
@@ -76,6 +75,14 @@ if uploaded_file is not None:
         # Botón de descarga
         with open(zip_filename, "rb") as f:
             st.download_button("📦 Descargar ZIP con códigos de barras", data=f, file_name=zip_filename)
+
+        # --- Mostrar primer código de barras ---
+        st.subheader("Vista previa del primer código de barras")
+        st.image(archivos_generados[0], width=400)
+
+        # --- Botón recargar ---
+        if st.button("🔄 Recargar"):
+            st.experimental_rerun()
 
     else:
         st.warning("No se generaron códigos de barras.")
