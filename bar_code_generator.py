@@ -2,22 +2,6 @@
 import importlib
 import sys
 import subprocess
-
-def instalar_si_no_existe(paquete, import_name=None):
-    if import_name is None:
-        import_name = paquete
-    try:
-        importlib.import_module(import_name)
-    except ImportError:
-        subprocess.check_call([sys.executable, "-m", "pip", "install", paquete, "-q"])
-
-# Instalar librerías necesarias
-instalar_si_no_existe("python-barcode", "barcode")
-instalar_si_no_existe("Pillow", "PIL")
-instalar_si_no_existe("pandas")
-instalar_si_no_existe("streamlit")
-
-# --- Importaciones ---
 import streamlit as st
 import pandas as pd
 import barcode
