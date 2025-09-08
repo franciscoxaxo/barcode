@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import barcode
 from barcode.writer import ImageWriter
+import treepoem
 from datetime import datetime, timedelta
 import re
 import zipfile
@@ -26,16 +27,19 @@ nombre_col_codigo = st.text_input("Nombre columna código", "Codigo")
 symbologia = st.selectbox(
     "Selecciona el tipo de código de barras",
     [
-        "ean13",     # EAN-13
-        "ean8",      # EAN-8
-        "upc",       # UPC-A
-        "code39",    # Código 39
-        "code128",   # Código 128
-        "pzn",       # Código PZN (farmacéutico)
-        "isbn13",    # ISBN
-        "issn"       # ISSN
+        "ean13",      # EAN-13
+        "ean8",       # EAN-8
+        "upc",        # UPC-A
+        "code39",     # Code 39
+        "code128",    # Code 128
+        "code93",     # Code 93 (treepoem)
+        "codabar",    # Codabar (treepoem)
+        "postnet",    # Postnet (treepoem)
+        "pzn",        # PZN (farmacéutico)
+        "isbn13",     # ISBN
+        "issn"        # ISSN
     ],
-    index=4  # Por defecto: Code128
+    index=4  # Por defecto Code128
 )
 
 # Parámetros gráficos
@@ -92,17 +96,27 @@ if st.session_state.csv_subido and st.session_state.file is not None:
             nombre_producto = str(row[nombre_col_producto])
             codigo = str(row[nombre_col_codigo])
             nombre_archivo = re.sub(r'[^a-zA-Z0-9_-]', "_", nombre_producto)
-            ruta_archivo = os.path.join(carpeta, nombre_archivo)
+            ruta_archivo = os.path.join(carpeta, nombre_archivo + ".png")
 
-            barra = barcode.get(symbologia, codigo, writer=ImageWriter())
-            archivo = barra.save(ruta_archivo, options={
-                "module_width": module_width,
-                "module_height": module_height,
-                "font_size": font_size,
-                "text_distance": text_distance,
-                "quiet_zone": quiet_zone
-            })
-            archivos_generados.append(archivo)
+            if symbologia in ["code93", "codabar", "postnet"]:
+                # Usar treepoem
+                img = treepoem.generate_barcode(barcode_type=symbologia, data=codigo)
+                img.convert("1").save(ruta_archivo)
+            else:
+                # Usar python-barcode
+                barra = barcode.get(symbologia, codigo, writer=ImageWriter())
+                barra.save(
+                    ruta_archivo.replace(".png", ""),
+                    options={
+                        "module_width": module_width,
+                        "module_height": module_height,
+                        "font_size": font_size,
+                        "text_distance": text_distance,
+                        "quiet_zone": quiet_zone
+                    }
+                )
+
+            archivos_generados.append(ruta_archivo)
         except Exception as e:
             st.warning(f"No se pudo generar código para '{nombre_producto}': {e}")
 
