@@ -9,7 +9,7 @@ import zipfile
 # ----------------------------
 # Función para generar códigos de barras
 # ----------------------------
-def generar_codigos_barras(df, col_nombre, col_codigo, tipo_codigo, ancho=2, alto=100):
+def generar_codigos_barras(df, col_nombre, col_codigo, tipo_codigo, ancho=2, alto=100, font_size=12, text_distance=5):
     buffer_zip = io.BytesIO()
     with zipfile.ZipFile(buffer_zip, "w") as zf:
         for _, row in df.iterrows():
@@ -42,7 +42,8 @@ def generar_codigos_barras(df, col_nombre, col_codigo, tipo_codigo, ancho=2, alt
                 barcode_obj.write(img_bytes, options={
                     "module_width": ancho,
                     "module_height": alto,
-                    "text_distance": 5
+                    "font_size": font_size,
+                    "text_distance": text_distance
                 })
 
                 # Guardar en el ZIP
@@ -97,10 +98,15 @@ if uploaded_file is not None:
             # Configuración de tamaño
             ancho = st.slider("📏 Ancho del módulo", 1, 5, 2)
             alto = st.slider("📏 Altura del código", 50, 300, 100)
+            font_size = st.slider("🔠 Tamaño de la letra", 6, 30, 12)
+            text_distance = st.slider("↕️ Separación código-texto", 0, 20, 5)
 
             # Generar códigos
             if st.button("🚀 Generar códigos de barras"):
-                zip_buffer = generar_codigos_barras(df, col_nombre, col_codigo, tipo_codigo, ancho, alto)
+                zip_buffer = generar_codigos_barras(
+                    df, col_nombre, col_codigo, tipo_codigo,
+                    ancho, alto, font_size, text_distance
+                )
 
                 # Descargar ZIP
                 st.download_button(
@@ -116,14 +122,31 @@ if uploaded_file is not None:
                     nombre = str(primera_fila[col_nombre]).strip()
                     codigo = str(primera_fila[col_codigo]).strip()
 
-                    BarcodeClass = barcode.get_barcode_class(tipo_codigo.lower()) if tipo_codigo.lower() in ["upc", "ean13", "code39", "code128", "code93", "codabar", "pzn"] else None
+                    if tipo_codigo == "UPC":
+                        BarcodeClass = barcode.get_barcode_class("upc")
+                    elif tipo_codigo == "EAN":
+                        BarcodeClass = barcode.get_barcode_class("ean13")
+                    elif tipo_codigo == "Code39":
+                        BarcodeClass = barcode.get_barcode_class("code39")
+                    elif tipo_codigo == "Code128":
+                        BarcodeClass = barcode.get_barcode_class("code128")
+                    elif tipo_codigo == "Code93":
+                        BarcodeClass = barcode.get_barcode_class("code93")
+                    elif tipo_codigo == "Codabar":
+                        BarcodeClass = barcode.get_barcode_class("codabar")
+                    elif tipo_codigo == "PZN":
+                        BarcodeClass = barcode.get_barcode_class("pzn")
+                    else:
+                        BarcodeClass = None
+
                     if BarcodeClass:
                         barcode_obj = BarcodeClass(codigo, writer=ImageWriter())
                         img_bytes = io.BytesIO()
                         barcode_obj.write(img_bytes, options={
                             "module_width": ancho,
                             "module_height": alto,
-                            "text_distance": 5
+                            "font_size": font_size,
+                            "text_distance": text_distance
                         })
                         img_bytes.seek(0)
                         img = Image.open(img_bytes)
