@@ -98,8 +98,8 @@ if uploaded_file is not None:
             # Configuración de tamaño
             ancho = st.slider("📏 Ancho del módulo", 1, 5, 2)
             alto = st.slider("📏 Altura del código", 50, 300, 100)
-            font_size = st.slider("🔠 Tamaño de la letra", 6, 30, 12)
-            text_distance = st.slider("↕️ Separación código-texto", 0, 20, 5)
+            font_size = st.slider("🔠 Tamaño de la letra", 6, 64, 30)
+            text_distance = st.slider("↕️ Separación código-texto", 0, 20, 11)
 
             # Generar códigos
             if st.button("🚀 Generar códigos de barras"):
